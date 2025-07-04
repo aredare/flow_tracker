@@ -140,7 +140,6 @@ def data_already_exists(tracked_instrument, trade_date, db_engine):
     with db_engine.connect() as conn:
         # Execute the query and get the boolean result
         result = conn.execute(stmt).scalar()
-
     return result
 
 
@@ -233,19 +232,27 @@ def main():
                 logger.warning(f"tracked symbol is already in database: {ev['symbol'], ev['expiration'], ev['optType'], ev['strike']}")
 
             else:
-                # 6) fetch from iVol
-                logger.info(f"Fetching tracked symbol intraday data from ivol: {ev['symbol'], ev['expiration'], ev['optType'], ev['strike']}")
-                raw = getOptionIV(
-                    symbol=ev["symbol"],
-                    date=current_date.isoformat(),
-                    expDate=ev["expiration"].isoformat(),
-                    strike=str(ev["strike"]),
-                    optType=ev["optType"],
-                    minuteType="MINUTE_1"
-                )
-                # 6b) persist
-                logger.info(f"persisting symbol to database")
-                transform_iv_response(raw, engine)
+                try:
+                    # 6) fetch from iVol
+                    logger.info(f"Fetching tracked symbol intraday data from ivol: {ev['symbol'], ev['expiration'], ev['optType'], ev['strike']}")
+                    raw = getOptionIV(
+                        symbol=ev["symbol"],
+                        date=current_date.isoformat(),
+                        expDate=ev["expiration"].isoformat(),
+                        strike=str(ev["strike"]),
+                        optType=ev["optType"],
+                        minuteType="MINUTE_1"
+                    )
+                    # 6b) persist
+                    logger.info(f"persisting symbol to database")
+                    transform_iv_response(raw, engine)
+
+                except Exception as e:
+                    # Log that an error occurred, including which symbol failed.
+                    # We also log the type of the exception and the exception message itself.
+                    logger.error(
+                        f"Failed to process symbol {row.symbol} due to an error. " f"Error Type: {type(e).__name__}. " f"Error Message: {e}",
+                        exc_info=True)
 
         # 7) build this trade’s option symbol
         already_tracked = any(ev["symbol"] == row.symbol and
@@ -265,19 +272,37 @@ def main():
             "event_ts":   row.trade_dt
         })
         logger.info(f"Added symbol to tracked symbols {row.symbol, row.expiration, row.c_p, row.strike}")
-        logger.info("Fetching tracked symbol intraday data from ivol")
 
-        raw = getOptionIV(
-            symbol=row.symbol,
-            date=current_date.isoformat(),
-            expDate=pd.to_datetime(row.expiration).date().isoformat(),
-            strike=str(row.strike),
-            optType=row.c_p,
-            minuteType="MINUTE_1"
-        )
+        instrument = dict(row)
+        instrument['optType'] = instrument['c_p']
+        instrument['expiration'] = pd.to_datetime(instrument['expiration'])
+        missing = data_already_exists(instrument, current_date, engine)
 
-        logger.info(f"persisting symbol to database")
-        transform_iv_response(raw, engine)
+        if missing:
+            logger.warning(
+                f"tracked symbol is already in database: {instrument['symbol'], instrument['expiration'], instrument['optType'], instrument['strike']}")
+
+        else:
+            # 6) fetch from iVol
+            logger.info(
+                f"Fetching symbol intraday data from ivol: {instrument['symbol'], instrument['expiration'], instrument['optType'], instrument['strike']}")
+            try:
+                raw = getOptionIV(
+                    symbol=row.symbol,
+                    date=current_date.isoformat(),
+                    expDate=pd.to_datetime(row.expiration).date().isoformat(),
+                    strike=str(row.strike),
+                    optType=row.c_p,
+                    minuteType="MINUTE_1"
+                )
+
+                logger.info(f"persisting symbol to database")
+                transform_iv_response(raw, engine)
+
+            except Exception as e:
+                # Log that an error occurred, including which symbol failed.
+                # We also log the type of the exception and the exception message itself.
+                logger.error(f"Failed to process symbol {row.symbol} due to an error. " f"Error Type: {type(e).__name__}. " f"Error Message: {e}", exc_info=True)
 
     # persist updated tracking
     logger.info("Saving updated tracked_options")
@@ -286,4 +311,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-
