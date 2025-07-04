@@ -1,0 +1,5 @@
+date,time,symbol,expiration,strike,c_p,total premium, quantity ,avg price,type,delta,sold?,open int,Open traded price to event (%),notes,days_to_earnings,QQQ px %,SPY px %,atm_vol,source,k = kiantrades,r = JonETrades
+6/12/2025,2:22:00 PM,CAPR,8/15/2025,25,C,"$322,000.00"," 1,000 ",3.22,single,,,,,,,,,,k,,
+6/12/2025,2:05:00 PM,GME,7/18/2025,21,P,"$2,000,000.00"," 12,000 ",1.67,single,,,,,,,,,,k,,
+6/12/2025,1:20:00 PM,IBIT,7/31/2025,65,C,"$1,340,000.00"," 5,100 ",2.63,single,,,,,,,,,,k,,
+6/12/2025,1:02:00 PM,SN,7/18/2025,80,P,"$1,963,592.00"," 10,614 ",1.85,single,,TRUE,45,,,,,,,r,,

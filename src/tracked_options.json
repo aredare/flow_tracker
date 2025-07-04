@@ -1,0 +1,30 @@
+[
+  {
+    "symbol": "CAPR",
+    "expiration": "2025-08-15",
+    "strike": 25.0,
+    "optType": "C",
+    "event_ts": "2025-06-12T14:22:00"
+  },
+  {
+    "symbol": "SN",
+    "expiration": "2025-07-18",
+    "strike": 80.0,
+    "optType": "P",
+    "event_ts": "2025-06-12T13:02:00"
+  },
+  {
+    "symbol": "IBIT",
+    "expiration": "2025-07-31",
+    "strike": 65.0,
+    "optType": "C",
+    "event_ts": "2025-06-12T13:20:00"
+  },
+  {
+    "symbol": "GME",
+    "expiration": "2025-07-18",
+    "strike": 21.0,
+    "optType": "P",
+    "event_ts": "2025-06-12T14:05:00"
+  }
+]
