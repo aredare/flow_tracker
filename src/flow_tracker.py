@@ -71,6 +71,7 @@ metadata.create_all(engine)  # idempotent
 # JSON‐backed tracking store
 # TODO: Probably just move this to a the database
 TRACK_FILE = "tracked_options.json"
+TRADE_FLOW_DATA = "test_data.csv"
 
 
 def load_tracked():
@@ -192,7 +193,7 @@ def transform_iv_response(df: pd.DataFrame, db_engine):
 
 def main():
     # 1) read the full trade‐flow CSV
-    df = pd.read_csv("test_data.csv").drop(['k = kiantrades', 'r = JonETrades'], axis=1)
+    df = pd.read_csv(TRADE_FLOW_DATA).drop(['k = kiantrades', 'r = JonETrades'], axis=1)
 
     # combine and parse into a single datetime column
     df['trade_dt'] = pd.to_datetime(df['date'].astype(str) + ' ' + df['time'], format='%m/%d/%Y %I:%M:%S %p')
