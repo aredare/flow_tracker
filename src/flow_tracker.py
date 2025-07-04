@@ -212,10 +212,12 @@ def main():
         for ev in tracked:
             window = trading_days_between(ev["event_ts"].date(),
                                           ev["event_ts"].date() + timedelta(days=15))[:11]
-            logger.info(f"checking tracked symbol still in 10-day trading window {ev}")
 
             if pd.to_datetime(current_date) in window:
                 new_tracked.append(ev)
+            else:
+                logger.info(f"checking tracked symbol is out of 10-day trading window"
+                            f": {ev['symbol'], ev['expiration'], ev['optType'], ev['strike']}")
 
         tracked = new_tracked
 
