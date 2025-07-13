@@ -11,12 +11,14 @@ from sqlalchemy import (
     create_engine, MetaData, Table, Column,
     String, DateTime, Float, Integer, select, and_, exists, func
 )
-
+# TODO We need to add a trade to use to skip days we've already persisted data for
 # ─── CONFIG ─────────────────────────────────────────────────────────────────
 # MySQL connection
 MYSQL_URI = os.getenv("MYSQL_URI")
 engine = create_engine(MYSQL_URI)
 metadata = MetaData()
+start_date = datetime(2025, 5, 30)
+skip_dates = True
 
 # --- Configure logging at the start of your main script ---
 logging.basicConfig(
@@ -71,7 +73,7 @@ metadata.create_all(engine)  # idempotent
 # JSON‐backed tracking store
 # TODO: Probably just move this to a the database
 TRACK_FILE = "tracked_options.json"
-TRADE_FLOW_DATA = "test_data.csv"
+TRADE_FLOW_DATA = "option_flow_data.csv"
 
 
 def load_tracked():
@@ -206,6 +208,9 @@ def main():
     # loop each row in trade-flow
     for _, row in df.iterrows():
         current_date = row.trade_dt.date()
+        if skip_dates is True and current_date < start_date.date():
+            continue
+
         logger.info(f"current_date {current_date}")
         # 3) prune by 10 trading‑day window
         new_tracked = []
@@ -216,7 +221,7 @@ def main():
             if pd.to_datetime(current_date) in window:
                 new_tracked.append(ev)
             else:
-                logger.info(f"checking tracked symbol is out of 10-day trading window"
+                logger.info(f"tracked symbol is out of 10-day trading window"
                             f": {ev['symbol'], ev['expiration'], ev['optType'], ev['strike']}")
 
         tracked = new_tracked
@@ -227,6 +232,8 @@ def main():
 
         # 5) for each still‑tracked ev, fetch if missing
         for ev in tracked:
+            if ev['symbol'] == 'SPXW':
+                continue
             missing = data_already_exists(ev, current_date, engine)
             if missing:
                 logger.warning(f"tracked symbol is already in database: {ev['symbol'], ev['expiration'], ev['optType'], ev['strike']}")
@@ -277,6 +284,9 @@ def main():
         instrument['optType'] = instrument['c_p']
         instrument['expiration'] = pd.to_datetime(instrument['expiration'])
         missing = data_already_exists(instrument, current_date, engine)
+
+        if row.symbol == 'SPXW':
+            continue
 
         if missing:
             logger.warning(
